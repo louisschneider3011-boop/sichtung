@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0F1115">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Filmbewerter3000</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1115; --surface:#171A21; --surface-2:#1D2129; --line:#262B35;
+    --ink:#EDEFF2; --muted:#8B93A1; --amber:#E8A33D; --amber-dim:#7A5A22;
+    --velvet:#7A2436; --green:#7FBF8C; --radius:12px;
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --ease: cubic-bezier(.32,.72,0,1);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html{height:-webkit-fill-available;}
+  html,body{margin:0;padding:0;overscroll-behavior-y:none;}
+  body{
+    background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh; min-height:-webkit-fill-available;
+    -webkit-font-smoothing:antialiased; touch-action:manipulation;
+  }
+  .display{font-family:'Bebas Neue',sans-serif;letter-spacing:.03em;}
+  button,.card,.opt{touch-action:manipulation;user-select:none;}
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.01ms !important;transition-duration:.01ms !important;}
+  }
+
+  header.bar{
+    position:sticky;top:0;z-index:40;padding-top:calc(14px + var(--sat));
+    display:flex;align-items:center;justify-content:space-between;
+    padding-left:18px;padding-right:18px;padding-bottom:14px;
+    background:rgba(15,17,21,.92);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:baseline;gap:8px;}
+  .brand .bulb{width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px 2px var(--amber);animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+  .brand h1{font-size:21px;margin:0;line-height:1;}
+  .me{display:flex;align-items:center;gap:8px;cursor:pointer;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);transition:transform .1s ease;}
+  .me:active{transform:scale(.95);}
+  .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .me span{font-size:13px;font-weight:600;}
+
+  nav.tabs{display:flex;gap:2px;padding:0 14px;border-bottom:1px solid var(--line);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  nav.tabs::-webkit-scrollbar{display:none;}
+  nav.tabs button{
+    background:none;border:none;color:var(--muted);font-family:'Inter';font-weight:600;
+    font-size:13px;letter-spacing:.03em;padding:14px 14px 12px;cursor:pointer;
+    border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s ease;
+  }
+  nav.tabs button.active{color:var(--ink);border-bottom-color:var(--amber);}
+
+  main{max-width:1100px;margin:0 auto;padding:20px 16px calc(90px + var(--sab));}
+  .view{display:none;} .view.active{display:block;animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .searchbox{position:relative;margin-bottom:18px;}
+  .searchbox input{
+    width:100%;padding:15px 16px;border-radius:var(--radius);border:1px solid var(--line);
+    background:var(--surface);color:var(--ink);font-size:16px;font-family:'Inter';
+    -webkit-appearance:none;transition:border-color .15s ease;
+  }
+  .searchbox input:focus{outline:none;border-color:var(--amber);}
+  .section-label{font-family:'Bebas Neue';letter-spacing:.05em;color:var(--muted);font-size:15px;margin:22px 0 10px;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;}
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;cursor:pointer;transition:transform .12s ease,border-color .15s ease;
+    position:relative;opacity:0;animation:cardIn .35s var(--ease) forwards;
+  }
+  @keyframes cardIn{from{opacity:0;transform:translateY(10px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .card:active{transform:scale(.96);}
+  .card:hover{border-color:#3a4152;}
+  .poster{width:100%;aspect-ratio:2/3;background:var(--surface-2) center/cover;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center;padding:8px;}
+  .card-body{padding:9px 10px 11px;}
+  .card-title{font-size:13px;font-weight:700;line-height:1.25;margin:0 0 2px;}
+  .card-year{font-size:11px;color:var(--muted);}
+  .badge{position:absolute;top:7px;right:7px;background:rgba(15,17,21,.85);border:1px solid var(--amber-dim);color:var(--amber);font-size:11px;font-weight:800;padding:2px 6px;border-radius:6px;}
+  .watched-tick{position:absolute;top:7px;left:7px;background:var(--velvet);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;}
+  .empty{color:var(--muted);font-size:13px;padding:30px 4px;text-align:center;}
+
+  .skeleton{background:linear-gradient(100deg,var(--surface) 30%,var(--surface-2) 50%,var(--surface) 70%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite;}
+  @keyframes shimmer{0%{background-position:180% 0;}100%{background-position:-20% 0;}}
+  .sk-card{border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);}
+  .sk-poster{width:100%;aspect-ratio:2/3;}
+  .sk-line{height:11px;margin:9px 10px;border-radius:4px;}
+  .sk-line.short{width:60%;}
+
+  .modal-bg{position:fixed;inset:0;background:rgba(8,9,11,.75);z-index:100;display:none;align-items:flex-end;justify-content:center;-webkit-backdrop-filter:blur(2px);transition:background .2s ease;}
+  .modal-bg.active{display:flex;}
+  @media(min-width:640px){ .modal-bg{align-items:center;} }
+  .modal{
+    background:var(--surface);width:100%;max-width:540px;max-height:92vh;max-height:92dvh;
+    overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:20px 20px 0 0;
+    border:1px solid var(--line);border-bottom:none;animation:up .28s var(--ease);
+    padding-bottom:var(--sab);will-change:transform;
+  }
+  @media(min-width:640px){ .modal{border-radius:18px;border-bottom:1px solid var(--line);} }
+  @keyframes up{from{transform:translateY(40px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal-grip{width:36px;height:4px;background:var(--line);border-radius:3px;margin:10px auto 0;cursor:grab;}
+  .modal-hero{width:100%;aspect-ratio:16/8;background:var(--surface-2) center/cover;position:relative;margin-top:6px;}
+  .modal-hero .fade{position:absolute;inset:0;background:linear-gradient(180deg,transparent,var(--surface) 92%);}
+  .modal-close{position:absolute;top:10px;right:10px;background:rgba(15,17,21,.75);border:1px solid var(--line);color:var(--ink);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:transform .1s ease;}
+  .modal-close:active{transform:scale(.9);}
+  .play-trailer-btn{
+    position:absolute;bottom:10px;left:10px;background:rgba(15,17,21,.8);border:1px solid rgba(232,163,61,.5);color:var(--amber);
+    padding:8px 13px;border-radius:999px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;transition:transform .1s ease;
+  }
+  .play-trailer-btn:active{transform:scale(.94);}
+  .play-trailer-btn svg{width:12px;height:12px;fill:var(--amber);}
+  .modal-content{padding:0 20px 24px;}
+  .modal-content h2{font-family:'Bebas Neue';font-size:29px;letter-spacing:.02em;margin:2px 0 2px;}
+  .meta-row{color:var(--muted);font-size:12px;margin-bottom:12px;}
+  .overview{font-size:13px;line-height:1.55;color:#C5CAD3;margin-bottom:16px;}
+
+  /* avatars */
+  .av{border-radius:50%;flex-shrink:0;object-fit:cover;display:flex;align-items:center;justify-content:center;
+      font-weight:700;color:#0F1115;font-size:11px;overflow:hidden;background-size:cover;background-position:center;}
+  .av-22{width:22px;height:22px;font-size:10px;}
+  .av-28{width:28px;height:28px;font-size:12px;}
+  .av-72{width:72px;height:72px;font-size:26px;}
+
+  .profile-sheet{padding:26px 20px calc(26px + var(--sab));text-align:center;}
+  .profile-sheet .av{margin:0 auto 14px;}
+  .profile-sheet h3{font-family:'Bebas Neue';font-size:26px;margin:0 0 2px;letter-spacing:.02em;}
+  .profile-sheet .sub{font-size:12px;color:var(--muted);margin-bottom:22px;}
+  .av-hint{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.45;}
+
+  /* streaming providers */
+  .prov-block{margin-bottom:16px;}
+  .prov-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:7px;}
+  .prov-logos{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+  .prov-logo{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);object-fit:cover;background:var(--surface-2);}
+  .prov-more{font-size:11px;color:var(--muted);align-self:center;}
+
+  /* "Für dich" — open tasks */
+  .task-hero{background:linear-gradient(160deg,var(--surface-2),var(--surface));border:1px solid var(--line);
+    border-radius:16px;padding:20px;margin-bottom:22px;}
+  .task-hero .greet{font-family:'Bebas Neue';font-size:24px;letter-spacing:.02em;margin-bottom:3px;}
+  .task-hero .sub{font-size:13px;color:var(--muted);line-height:1.5;}
+  .task-count{display:inline-flex;align-items:center;gap:6px;background:rgba(232,163,61,.13);
+    border:1px solid var(--amber-dim);color:var(--amber);border-radius:999px;
+    padding:5px 12px;font-size:12px;font-weight:700;margin-top:12px;}
+
+  .task-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line);cursor:pointer;transition:opacity .1s ease;}
+  .task-row:first-of-type{border-top:none;}
+  .task-row:active{opacity:.6;}
+  .task-poster{width:42px;height:62px;border-radius:6px;background:var(--surface-2) center/cover;flex-shrink:0;}
+  .task-info{flex:1;min-width:0;}
+  .task-title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .task-why{font-size:11px;color:var(--muted);margin-top:2px;}
+  .task-go{color:var(--amber);font-size:18px;flex-shrink:0;}
+  .who-avatars{display:flex;margin-top:4px;}
+  .who-avatars .av{margin-right:-6px;border:1.5px solid var(--surface);}
+
+  .all-done{text-align:center;padding:36px 16px;}
+  .all-done .big{font-size:34px;margin-bottom:8px;}
+  .all-done .txt{font-size:13px;color:var(--muted);line-height:1.5;}
+
+  /* discovery feed */
+  .feed-head{display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 12px;}
+  .feed-head .fh-title{font-family:'Bebas Neue';font-size:17px;letter-spacing:.04em;}
+  .feed-head .fh-sub{font-size:11px;color:var(--muted);}
+
+  .feed-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    overflow:hidden;margin-bottom:16px;opacity:0;animation:cardIn .4s var(--ease) forwards;
+  }
+  .feed-poster{width:100%;aspect-ratio:16/9;background:var(--surface-2) center/cover;position:relative;}
+  .feed-poster .pfade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,17,21,.1),var(--surface) 96%);}
+  .feed-tmdb{position:absolute;top:10px;right:10px;background:rgba(15,17,21,.85);border:1px solid var(--amber-dim);
+    color:var(--amber);font-size:11px;font-weight:800;padding:3px 8px;border-radius:6px;}
+  .feed-body{padding:0 16px 16px;margin-top:-34px;position:relative;}
+  .feed-title{font-family:'Bebas Neue';font-size:24px;letter-spacing:.02em;margin:0 0 2px;}
+  .feed-meta{font-size:12px;color:var(--muted);margin-bottom:10px;}
+  .feed-overview{font-size:12.5px;line-height:1.5;color:#B8BEC8;margin:0 0 14px;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+  .feed-actions{display:flex;gap:9px;}
+  .feed-actions button{
+    flex:1;padding:13px;border-radius:10px;border:none;cursor:pointer;
+    font-family:'Inter';font-weight:700;font-size:14px;transition:transform .1s ease,opacity .1s ease;
+  }
+  .feed-actions button:active{transform:scale(.97);opacity:.9;}
+  .fa-rate{background:var(--amber);color:#221703;}
+  .fa-skip{background:none;border:1px solid var(--line) !important;color:var(--muted);flex:0 0 40% !important;}
+
+  .feed-sentinel{height:40px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;}
+  .spinner{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* activity stream */
+  .act-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--line);}
+  .act-row:first-of-type{border-top:none;}
+  .act-txt{flex:1;min-width:0;font-size:13px;line-height:1.45;}
+  .act-txt b{font-weight:700;}
+  .act-txt .film{color:var(--ink);font-weight:600;}
+  .act-score{font-family:'Bebas Neue';font-size:17px;color:var(--amber);flex-shrink:0;}
+  .act-time{font-size:11px;color:var(--muted);margin-top:1px;}
+  .act-note{font-size:11.5px;color:var(--muted);font-style:italic;margin-top:3px;}
+
+  /* crew */
+  .crew-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+  .crew-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 14px;
+    text-align:center;cursor:pointer;transition:transform .12s ease,border-color .15s ease;
+    opacity:0;animation:cardIn .35s var(--ease) forwards;
+  }
+  .crew-card:active{transform:scale(.96);}
+  .crew-card .av{margin:0 auto 10px;}
+  .crew-card .cname{font-size:14px;font-weight:700;margin-bottom:3px;}
+  .crew-card .cstat{font-size:11px;color:var(--muted);}
+  .crew-card .cavg{font-family:'Bebas Neue';font-size:22px;color:var(--amber);margin-top:6px;line-height:1;}
+
+  .prof-head{text-align:center;padding:24px 20px 6px;}
+  .prof-head .av{margin:0 auto 12px;}
+  .prof-head h3{font-family:'Bebas Neue';font-size:28px;margin:0 0 3px;letter-spacing:.02em;}
+  .prof-stats{display:flex;justify-content:center;gap:26px;margin:14px 0 4px;}
+  .prof-stat .n{font-family:'Bebas Neue';font-size:24px;color:var(--amber);line-height:1;}
+  .prof-stat .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:3px;}
+
+  /* expandable list */
+  .expand-btn{
+    width:100%;background:none;border:1px solid var(--line);color:var(--muted);
+    border-radius:9px;padding:11px;font-family:'Inter';font-size:13px;font-weight:600;
+    cursor:pointer;margin-top:12px;transition:color .15s ease,border-color .15s ease;
+  }
+  .expand-btn:active{color:var(--ink);border-color:#3a4152;}
+
+  /* update banner */
+  .update-bar{
+    position:fixed;left:12px;right:12px;bottom:calc(14px + var(--sab));z-index:250;
+    background:var(--amber);color:#221703;border-radius:12px;padding:13px 16px;
+    display:none;align-items:center;justify-content:space-between;gap:12px;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);
+    transform:translateY(80px);transition:transform .3s var(--ease);
+  }
+  .update-bar.show{display:flex;transform:translateY(0);}
+  .update-bar .ub-txt{font-size:13px;font-weight:600;line-height:1.35;}
+  .update-bar button{
+    background:#221703;color:var(--amber);border:none;border-radius:8px;
+    padding:9px 15px;font-family:'Inter';font-weight:700;font-size:13px;cursor:pointer;flex-shrink:0;
+  }
+
+  .critic-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .critic-pill{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;text-align:center;flex:1;min-width:78px;}
+  .critic-pill .cv{font-family:'Bebas Neue';font-size:20px;color:var(--amber);line-height:1;}
+  .critic-pill.meta .cv{color:var(--green);}
+  .critic-pill .cl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+
+  .trailer-embed{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden;margin-bottom:16px;}
+  .trailer-embed iframe{width:100%;height:100%;border:0;}
+
+  .btn{width:100%;padding:14px;border-radius:10px;border:none;cursor:pointer;font-family:'Inter';font-weight:700;font-size:15px;margin-top:10px;transition:transform .1s ease,opacity .1s ease;}
+  .btn:active{transform:scale(.98);opacity:.9;}
+  .btn-primary{background:var(--amber);color:#221703;}
+  .btn-secondary{background:none;border:1px solid var(--line);color:var(--ink);}
+  .btn-ghost{background:none;border:none;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;padding:10px;}
+
+  .your-score{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;}
+  .your-score .big{font-family:'Bebas Neue';font-size:36px;color:var(--amber);line-height:1;}
+  .your-score .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+
+  .crew-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap;}
+  .crew-row:first-child{border-top:none;}
+  .crew-row .name{font-size:13px;font-weight:600;flex:1;}
+  .crew-row .score{font-family:'Bebas Neue';font-size:20px;color:var(--amber);}
+  .crew-row .note{font-size:11px;color:var(--muted);font-style:italic;flex-basis:100%;margin-left:24px;margin-top:-4px;}
+
+  .quiz{padding:16px 20px calc(26px + var(--sab));}
+  .quiz-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .quiz-step{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+  .progress{height:3px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin-bottom:22px;}
+  .progress-fill{height:100%;background:var(--amber);transition:width .35s var(--ease);}
+  .quiz-dim{font-family:'Bebas Neue';font-size:14px;color:var(--amber);letter-spacing:.08em;margin-bottom:4px;}
+  .quiz-q{font-size:19px;font-weight:700;line-height:1.35;margin:0 0 20px;animation:qin .25s ease;}
+  @keyframes qin{from{opacity:0;transform:translateX(8px);}to{opacity:1;transform:translateX(0);}}
+  .opts{display:flex;flex-direction:column;gap:9px;}
+  .opt{
+    text-align:left;width:100%;padding:15px;border-radius:11px;border:1px solid var(--line);
+    background:var(--surface-2);color:var(--ink);font-family:'Inter';font-size:14px;line-height:1.35;
+    cursor:pointer;transition:border-color .12s ease,background .12s ease,transform .1s ease;
+    display:flex;align-items:center;gap:12px;
+  }
+  .opt:active{transform:scale(.98);}
+  .opt.chosen{border-color:var(--amber);background:rgba(232,163,61,.1);}
+  .opt .pip{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--muted);flex-shrink:0;transition:all .15s ease;}
+  .opt.chosen .pip{background:var(--amber);border-color:var(--amber);transform:scale(1.15);}
+  .quiz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:20px;}
+
+  .result-score{text-align:center;padding:8px 0 4px;}
+  .result-score .num{font-family:'Bebas Neue';font-size:64px;color:var(--amber);line-height:1;}
+  .result-score .cap{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+  .breakdown{margin:20px 0 6px;}
+  .bd-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+  .bd-row .bn{width:96px;font-size:12px;color:var(--muted);flex-shrink:0;}
+  .bd-track{flex:1;height:7px;background:var(--surface-2);border-radius:5px;overflow:hidden;}
+  .bd-fill{height:100%;background:var(--amber);border-radius:5px;width:0;transition:width .6s var(--ease);}
+  .bd-row .bv{width:26px;text-align:right;font-size:12px;font-weight:600;}
+  .adjust{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);padding:15px;margin-top:16px;}
+  .adjust label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+  .adjust .hint{font-size:11px;color:var(--muted);margin:5px 0 10px;line-height:1.45;}
+  input[type=range]{width:100%;accent-color:var(--amber);height:6px;touch-action:pan-y;}
+  .adj-val{font-family:'Bebas Neue';font-size:22px;color:var(--amber);text-align:center;margin-top:4px;}
+  textarea{width:100%;margin-top:12px;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-family:'Inter';font-size:16px;resize:vertical;min-height:54px;-webkit-appearance:none;}
+
+  .stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px;}
+  .stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;}
+  .stat-card .num{font-family:'Bebas Neue';font-size:34px;color:var(--amber);line-height:1;}
+  .stat-card .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;}
+  .lb-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);}
+  .lb-row:first-child{border-top:none;}
+  .lb-rank{font-family:'Bebas Neue';font-size:20px;color:var(--muted);width:22px;}
+  .lb-poster{width:36px;height:52px;border-radius:5px;background:var(--surface-2) center/cover;flex-shrink:0;}
+  .lb-info{flex:1;min-width:0;}
+  .lb-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lb-sub{font-size:11px;color:var(--muted);}
+  .lb-score{font-family:'Bebas Neue';font-size:22px;color:var(--amber);}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .bar-row .bname{width:80px;font-size:12px;font-weight:600;flex-shrink:0;}
+  .bar-track{flex:1;height:10px;background:var(--surface-2);border-radius:6px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;width:0;transition:width .7s var(--ease);}
+  .bar-row .bval{width:32px;text-align:right;font-size:12px;color:var(--muted);}
+
+  .login-bg{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;padding-bottom:calc(20px + var(--sab));}
+  .login-card{max-width:360px;width:100%;text-align:center;animation:fadein .4s ease;}
+  .login-card .bulb{width:10px;height:10px;border-radius:50%;background:var(--amber);box-shadow:0 0 16px 3px var(--amber);margin:0 auto 14px;animation:pulse 2.4s ease-in-out infinite;}
+  .login-card h1{font-size:38px;margin:0 0 6px;}
+  .login-card p{color:var(--muted);font-size:13px;margin-bottom:26px;line-height:1.5;}
+  .login-card input{width:100%;padding:15px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;text-align:center;margin-bottom:12px;-webkit-appearance:none;transition:border-color .15s ease;}
+  .login-card input:focus{outline:none;border-color:var(--amber);}
+
+  .toast{
+    position:fixed;bottom:calc(20px + var(--sab));left:50%;transform:translateX(-50%) translateY(6px);
+    background:var(--velvet);color:#fff;padding:12px 20px;border-radius:999px;font-size:13px;font-weight:600;
+    z-index:300;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s var(--ease);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+  ::selection{background:var(--amber);color:#221703;}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-bg">
+  <div class="login-card">
+    <div class="bulb"></div>
+    <h1 class="display">FILMBEWERTER3000</h1>
+    <p>Filme bewerten mit deinen Leuten. Trag dich mit deinem Namen ein — alle sehen, was du vergibst.</p>
+    <input id="nameInput" type="text" placeholder="Dein Name" maxlength="40" autocomplete="off" autocorrect="off">
+    <button class="btn btn-primary" onclick="login()">Eintragen</button>
+  </div>
+</div>
+
+<header class="bar" id="topbar" style="display:none;">
+  <div class="brand"><span class="bulb"></span><h1 class="display">FILMBEWERTER3000</h1></div>
+  <div class="me" onclick="openProfile()">
+    <span id="meAvatar"></span><span id="meName"></span>
+  </div>
+</header>
+
+<input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="onAvatarPicked(event)">
+
+<nav class="tabs" id="tabs" style="display:none;">
+  <button class="active" data-tab="home" onclick="showTab('home')">Für dich</button>
+  <button data-tab="search" onclick="showTab('search')">Suchen</button>
+  <button data-tab="wall" onclick="showTab('wall')">Wand</button>
+  <button data-tab="crew" onclick="showTab('crew')">Crew</button>
+  <button data-tab="stats" onclick="showTab('stats')">Statistik</button>
+</nav>
+
+<main id="app" style="display:none;">
+  <div class="view active" id="view-home">
+    <div class="task-hero" id="taskHero"></div>
+    <div id="activityBox"></div>
+    <div id="taskHead"></div>
+    <div id="taskList"></div>
+    <div id="feedHead"></div>
+    <div id="feedList"></div>
+    <div class="feed-sentinel" id="feedSentinel"></div>
+  </div>
+
+  <div class="view" id="view-crew">
+    <div class="section-label">Deine Crew</div>
+    <div class="crew-grid" id="crewGrid"></div>
+  </div>
+
+  <div class="view" id="view-search">
+    <div class="searchbox">
+      <input id="searchInput" type="text" placeholder="Film suchen … z.B. Interstellar" autocomplete="off" autocorrect="off">
+    </div>
+    <div class="section-label" id="searchLabel">Gerade beliebt</div>
+    <div class="grid" id="searchGrid"></div>
+  </div>
+
+  <div class="view" id="view-wall">
+    <div class="section-label">Geschaute Filme der Crew</div>
+    <div class="grid" id="wallGrid"></div>
+  </div>
+
+  <div class="view" id="view-stats">
+    <div class="stat-cards" id="statCards"></div>
+    <div class="section-label">Bestbewertet</div>
+    <div id="topList"></div>
+    <div class="section-label">Durchschnitt pro Person</div>
+    <div id="userBars" style="margin-top:6px;"></div>
+  </div>
+</main>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="update-bar" id="updateBar">
+  <span class="ub-txt">Neue Version verfügbar</span>
+  <button onclick="location.reload()">Aktualisieren</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const IMG = 'https://image.tmdb.org/t/p/w342';
+const IMG_BIG = 'https://image.tmdb.org/t/p/w780';
+
+const DIMENSIONS = [
+  { key:'story', label:'Story', weight:0.30, question:'Wie war die Geschichte?',
+    options:[
+      {v:2,t:'Langweilig'},
+      {v:4,t:'Schwach'},
+      {v:6,t:'Ganz okay'},
+      {v:8,t:'Richtig gut'},
+      {v:10,t:'Der Wahnsinn'}
+    ]},
+  { key:'craft', label:'Optik', weight:0.20, question:'Wie sah der Film aus?',
+    options:[
+      {v:2,t:'Billig'},
+      {v:4,t:'Nichts Besonderes'},
+      {v:6,t:'Sauber gemacht'},
+      {v:8,t:'Richtig schön'},
+      {v:10,t:'Atemberaubend'}
+    ]},
+  { key:'impact', label:'Spannung', weight:0.35, question:'Hat er dich gefesselt?',
+    options:[
+      {v:2,t:'Fast eingeschlafen'},
+      {v:4,t:'Oft abgelenkt'},
+      {v:6,t:'War dabei'},
+      {v:8,t:'Voll drin'},
+      {v:10,t:'Konnte nicht wegschauen'}
+    ]},
+  { key:'echo', label:'Nochmal?', weight:0.15, question:'Würdest du ihn nochmal schauen?',
+    options:[
+      {v:2,t:'Auf keinen Fall'},
+      {v:4,t:'Eher nicht'},
+      {v:6,t:'Vielleicht'},
+      {v:8,t:'Ja, gerne'},
+      {v:10,t:'Immer wieder'}
+    ]}
+];
+
+function computeScore(scores, adjust){
+  let total = 0;
+  for(const d of DIMENSIONS) total += (scores[d.key]||0) * d.weight;
+  const withAdj = total + (adjust||0);
+  return Math.min(10, Math.max(0.5, Math.round(withAdj*10)/10));
+}
+
+let me = null;
+let currentMovie = null;
+let allMovies = [];
+let searchTimer = null;
+let quiz = null;
+
+/* Avatars are loaded once here and looked up by id when rendering.
+   They are deliberately NOT sent along with every rating — otherwise
+   each /api/movies call would drag along one image per rating. */
+let usersMap = {};
+
+async function loadUsers(){
+  try{
+    const res = await fetch('/api/users');
+    const data = await res.json();
+    usersMap = {};
+    (data.users||[]).forEach(u=>{ usersMap[u.id] = u; });
+    if(me && usersMap[me.id]){
+      me.avatar = usersMap[me.id].avatar || null;
+      me.color = usersMap[me.id].color || me.color;
+      localStorage.setItem('sichtung_user', JSON.stringify(me));
+    }
+  }catch(e){}
+}
+
+function avatarHtml(userId, name, color, size){
+  const u = usersMap[userId];
+  const av = u ? u.avatar : (me && me.id===userId ? me.avatar : null);
+  const cls = 'av av-'+(size||22);
+  if(av){
+    return `<span class="${cls}" style="background-image:url('${av}')"></span>`;
+  }
+  const initial = (name||'?').trim().charAt(0).toUpperCase();
+  return `<span class="${cls}" style="background:${color||'#8B93A1'}">${escapeHtml(initial)}</span>`;
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------- auth ---------- */
+function loadUser(){
+  const raw = localStorage.getItem('sichtung_user');
+  if(raw){ me = JSON.parse(raw); enterApp(); }
+}
+async function login(){
+  const name = document.getElementById('nameInput').value.trim();
+  if(!name) return;
+  const res = await fetch('/api/users', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name})});
+  const data = await res.json();
+  if(data.error){ toast(data.error); return; }
+  me = data.user;
+  localStorage.setItem('sichtung_user', JSON.stringify(me));
+  enterApp();
+}
+function switchUser(){ localStorage.removeItem('sichtung_user'); location.reload(); }
+
+async function enterApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('topbar').style.display='flex';
+  document.getElementById('tabs').style.display='flex';
+  document.getElementById('app').style.display='block';
+  document.getElementById('meName').textContent = me.name;
+  await loadUsers();
+  paintMeAvatar();
+  await loadMovies();
+  renderHome();
+  loadPopular();
+}
+
+function paintMeAvatar(){
+  const el = document.getElementById('meAvatar');
+  if(el) el.outerHTML = `<span id="meAvatar">${avatarHtml(me.id, me.name, me.color, 22)}</span>`;
+}
+
+/* ---------- profile sheet ---------- */
+function openProfile(){
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-grip"></div>
+    <div class="profile-sheet">
+      ${avatarHtml(me.id, me.name, me.color, 72)}
+      <h3>${escapeHtml(me.name)}</h3>
+      <div class="sub">Dein Profil</div>
+      <button class="btn btn-primary" onclick="pickAvatar()">Profilbild ${me.avatar?'ändern':'hochladen'}</button>
+      ${me.avatar?`<button class="btn btn-secondary" onclick="removeAvatar()">Bild entfernen</button>`:''}
+      <p class="av-hint">Das Bild sehen alle in deiner Crew. Es wird vor dem Hochladen automatisch verkleinert.</p>
+      <button class="btn btn-secondary" style="margin-top:18px;" onclick="switchUser()">Abmelden / Nutzer wechseln</button>
+      <button class="btn-ghost" style="width:100%;" onclick="closeModal()">Schließen</button>
+    </div>`;
+  document.getElementById('modalBg').classList.add('active');
+  attachSwipeToClose();
+}
+
+function pickAvatar(){ document.getElementById('avatarInput').click(); }
+
+async function onAvatarPicked(e){
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  toast('Bild wird verarbeitet …');
+  try{
+    const dataUrl = await resizeImage(file, 256);
+    const res = await fetch('/api/users/avatar', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ user_id: me.id, avatar: dataUrl })
+    });
+    const data = await res.json();
+    if(data.error){ toast(data.error); return; }
+    me.avatar = dataUrl;
+    if(usersMap[me.id]) usersMap[me.id].avatar = dataUrl;
+    localStorage.setItem('sichtung_user', JSON.stringify(me));
+    paintMeAvatar();
+    openProfile();
+    toast('Profilbild gespeichert');
+  }catch(err){
+    toast('Bild konnte nicht gelesen werden');
+  }
+}
+
+async function removeAvatar(){
+  const res = await fetch('/api/users/avatar', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ user_id: me.id, avatar: null })
+  });
+  const data = await res.json();
+  if(data.error){ toast(data.error); return; }
+  me.avatar = null;
+  if(usersMap[me.id]) usersMap[me.id].avatar = null;
+  localStorage.setItem('sichtung_user', JSON.stringify(me));
+  paintMeAvatar();
+  openProfile();
+  toast('Bild entfernt');
+}
+
+/* Square center-crop to 256px JPEG. Keeps stored images around 20 KB,
+   small enough to live in D1 alongside the row. */
+function resizeImage(file, size){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const scale = Math.max(size/img.width, size/img.height);
+        const w = img.width*scale, h = img.height*scale;
+        ctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = ()=>reject(new Error('decode failed'));
+      img.src = reader.result;
+    };
+    reader.onerror = ()=>reject(new Error('read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+document.getElementById('nameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') login(); });
+
+/* ---------- tabs ---------- */
+function showTab(name){
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  if(name==='stats') renderStats();
+  if(name==='wall') renderWall();
+  if(name==='crew') renderCrew();
+  if(name==='home'){ feedStarted ? refreshHomeTasks() : renderHome(); }
+}
+
+/* ---------- relative time in German ---------- */
+function timeAgo(iso){
+  if(!iso) return '';
+  // SQLite datetime('now') returns "YYYY-MM-DD HH:MM:SS" in UTC.
+  const t = Date.parse(iso.replace(' ', 'T') + (iso.endsWith('Z') ? '' : 'Z'));
+  if(isNaN(t)) return '';
+  const s = Math.max(0, Math.floor((Date.now() - t) / 1000));
+  if(s < 60)    return 'gerade eben';
+  if(s < 3600)  return `vor ${Math.floor(s/60)} Min`;
+  if(s < 86400) { const h = Math.floor(s/3600); return `vor ${h} ${h===1?'Stunde':'Stunden'}`; }
+  const d = Math.floor(s/86400);
+  if(d === 1)  return 'gestern';
+  if(d < 7)    return `vor ${d} Tagen`;
+  if(d < 30)   { const w = Math.floor(d/7); return `vor ${w} ${w===1?'Woche':'Wochen'}`; }
+  const mo = Math.floor(d/30);
+  return `vor ${mo} ${mo===1?'Monat':'Monaten'}`;
+}
+
+/* ---------- activity stream ----------
+   Flattened from the ratings already loaded with /api/movies, so this
+   costs nothing extra. Newest first. */
+function allActivity(){
+  const acts = [];
+  allMovies.forEach(m=>{
+    (m.ratings||[]).forEach(r=>{
+      acts.push({
+        user_id: r.user_id, name: r.name, color: r.color,
+        rating: r.rating, note: r.note, when: r.watched_at,
+        movie: m
+      });
+    });
+  });
+  return acts.sort((a,b)=> String(b.when||'').localeCompare(String(a.when||'')));
+}
+
+function renderActivity(){
+  const box = document.getElementById('activityBox');
+  if(!box) return;
+  const acts = allActivity().slice(0, 8);
+  if(!acts.length){ box.innerHTML = ''; return; }
+
+  box.innerHTML = `
+    <div class="feed-head" style="margin-top:4px;">
+      <span class="fh-title">ZULETZT PASSIERT</span>
+    </div>
+    ${acts.map(a=>`
+      <div class="act-row">
+        ${avatarHtml(a.user_id, a.name, a.color, 28)}
+        <div class="act-txt">
+          <div><b>${escapeHtml(a.user_id===me.id ? 'Du' : a.name)}</b> ${a.user_id===me.id?'hast':'hat'}
+            <span class="film" onclick='openMovie(${esc(JSON.stringify(a.movie))})' style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);">${escapeHtml(a.movie.title)}</span> bewertet</div>
+          <div class="act-time">${timeAgo(a.when)}</div>
+          ${a.note?`<div class="act-note">"${escapeHtml(a.note)}"</div>`:''}
+        </div>
+        <div class="act-score">${a.rating}</div>
+      </div>`).join('')}`;
+}
+
+/* ---------- crew ---------- */
+function crewStats(){
+  const map = {};
+  // Everyone who exists, even if they haven't rated anything yet.
+  Object.values(usersMap).forEach(u=>{
+    map[u.id] = { id:u.id, name:u.name, color:u.color, sum:0, count:0, films:[] };
+  });
+  allMovies.forEach(m=>{
+    (m.ratings||[]).forEach(r=>{
+      if(!map[r.user_id]) map[r.user_id] = { id:r.user_id, name:r.name, color:r.color, sum:0, count:0, films:[] };
+      map[r.user_id].sum += r.rating;
+      map[r.user_id].count += 1;
+      map[r.user_id].films.push({ movie:m, rating:r.rating, note:r.note, when:r.watched_at });
+    });
+  });
+  return Object.values(map).map(u=>({
+    ...u,
+    avg: u.count ? u.sum/u.count : null,
+    films: u.films.sort((a,b)=> b.rating - a.rating)
+  })).sort((a,b)=> b.count - a.count);
+}
+
+function renderCrew(){
+  const grid = document.getElementById('crewGrid');
+  const crew = crewStats();
+  if(!crew.length){ grid.innerHTML = '<div class="empty">Noch niemand dabei.</div>'; return; }
+
+  grid.innerHTML = crew.map((u,i)=>`
+    <div class="crew-card" style="animation-delay:${Math.min(i*40,240)}ms" onclick="openMemberProfile('${u.id}')">
+      ${avatarHtml(u.id, u.name, u.color, 72)}
+      <div class="cname">${escapeHtml(u.name)}${u.id===me.id?' (du)':''}</div>
+      <div class="cstat">${u.count} ${u.count===1?'Film':'Filme'}</div>
+      ${u.avg!==null?`<div class="cavg">Ø ${u.avg.toFixed(1)}</div>`:''}
+    </div>`).join('');
+}
+
+function openMemberProfile(userId){
+  const u = crewStats().find(x=>x.id===userId);
+  if(!u) return;
+
+  const filmsHtml = u.films.length ? u.films.map(f=>`
+    <div class="lb-row" style="cursor:pointer;" onclick='openMovie(${esc(JSON.stringify(f.movie))})'>
+      <div class="lb-poster" style="${f.movie.poster_path?`background-image:url(${IMG+f.movie.poster_path})`:''}"></div>
+      <div class="lb-info">
+        <div class="lb-title">${escapeHtml(f.movie.title)}</div>
+        <div class="lb-sub">${(f.movie.release_date||'').slice(0,4)}${f.note?' · "'+escapeHtml(f.note)+'"':''}</div>
+      </div>
+      <div class="lb-score">${f.rating}</div>
+    </div>`).join('')
+    : '<div class="empty">Noch nichts bewertet.</div>';
+
+  const best = u.films.length ? u.films[0] : null;
+
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-grip"></div>
+    <div class="prof-head">
+      ${avatarHtml(u.id, u.name, u.color, 72)}
+      <h3>${escapeHtml(u.name)}</h3>
+      ${best?`<div style="font-size:12px;color:var(--muted);">Lieblingsfilm: ${escapeHtml(best.movie.title)}</div>`:''}
+      <div class="prof-stats">
+        <div class="prof-stat"><div class="n">${u.count}</div><div class="l">Filme</div></div>
+        <div class="prof-stat"><div class="n">${u.avg!==null?u.avg.toFixed(1):'–'}</div><div class="l">Schnitt</div></div>
+      </div>
+    </div>
+    <div class="modal-content" style="padding-top:10px;">
+      <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Bewertungen</label>
+      <div style="margin-top:8px;">${filmsHtml}</div>
+      <button class="btn btn-secondary" onclick="closeModal()">Schließen</button>
+    </div>`;
+  document.getElementById('modalBg').classList.add('active');
+  attachSwipeToClose();
+}
+
+/* ---------- silent update check ----------
+   Compares the ETag of index.html against the one seen at load time.
+   Cloudflare changes it on every deploy, so no version constant to maintain. */
+let bootTag = null;
+
+async function fetchTag(){
+  try{
+    const res = await fetch('/index.html?cb=' + Date.now(), { method:'HEAD', cache:'no-store' });
+    return res.headers.get('etag') || res.headers.get('last-modified') || null;
+  }catch(e){ return null; }
+}
+
+async function initUpdateCheck(){
+  bootTag = await fetchTag();
+  if(!bootTag) return; // headers unavailable — skip quietly rather than nag
+  setInterval(checkForUpdate, 4 * 60 * 1000);
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible') checkForUpdate();
+  });
+}
+
+async function checkForUpdate(){
+  const bar = document.getElementById('updateBar');
+  if(!bar || bar.classList.contains('show')) return;
+  const tag = await fetchTag();
+  if(tag && bootTag && tag !== bootTag){
+    bar.classList.add('show');
+  }
+}
+
+/* ---------- "Für dich": what's actually open for this person ----------
+   Everything here is derived from data already loaded, so no extra requests.
+   The list is finite on purpose — when it's empty, it says so instead of
+   inventing filler tasks. */
+function renderHome(){
+  const hero = document.getElementById('taskHero');
+  const list = document.getElementById('taskList');
+
+  // Films someone in the crew rated that this person hasn't.
+  const open = allMovies.filter(m =>
+    m.rating_count > 0 && !m.ratings.some(r => r.user_id === me.id)
+  );
+
+  const myCount = allMovies.filter(m => m.ratings.some(r => r.user_id === me.id)).length;
+
+  hero.innerHTML = `
+    <div class="greet">${greeting()}, ${escapeHtml(me.name)}</div>
+    <div class="sub">${
+      open.length
+        ? 'Deine Crew hat Filme bewertet, bei denen du noch fehlst.'
+        : (myCount ? 'Alles abgearbeitet. Scroll weiter für Vorschläge.' : 'Leg los — bewerte Filme, die du schon kennst.')
+    }</div>
+    ${open.length ? `<div class="task-count">${open.length} offen</div>` : ''}
+  `;
+
+  renderActivity();
+  paintTaskList(open);
+  startFeed();
+}
+
+function paintTaskList(open){
+  const head = document.getElementById('taskHead');
+  const list = document.getElementById('taskList');
+  if(!list) return;
+
+  head.innerHTML = open.length ? `
+    <div class="feed-head">
+      <span class="fh-title">DU FEHLST NOCH</span>
+      <span class="fh-sub">${open.length} ${open.length===1?'Film':'Filme'}</span>
+    </div>` : '';
+
+  list.innerHTML = open.map(m=>{
+    const who = m.ratings.slice(0,4);
+    return `
+    <div class="task-row" onclick='openMovie(${esc(JSON.stringify(m))})'>
+      <div class="task-poster" style="${m.poster_path?`background-image:url(${IMG+m.poster_path})`:''}"></div>
+      <div class="task-info">
+        <div class="task-title">${escapeHtml(m.title)}</div>
+        <div class="task-why">${m.rating_count} ${m.rating_count===1?'Bewertung':'Bewertungen'} · Ø ${m.average}</div>
+        <div class="who-avatars">${who.map(r=>avatarHtml(r.user_id, r.name, r.color, 22)).join('')}</div>
+      </div>
+      <div class="task-go">›</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- endless suggestion feed ----------
+   Seeds are this person's own well-rated films; TMDB's "recommendations"
+   for those beat generic popularity by a mile. Skipped films are remembered
+   locally so the same title doesn't keep resurfacing. */
+
+let feedItems = [];
+let feedPage = 0;
+let feedLoading = false;
+let feedExhausted = false;
+let feedObserver = null;
+let feedStarted = false;
+
+function skippedIds(){
+  try{ return JSON.parse(localStorage.getItem('fb3000_skipped') || '[]'); }
+  catch(e){ return []; }
+}
+function addSkipped(id){
+  const s = skippedIds();
+  if(!s.includes(id)){ s.push(id); localStorage.setItem('fb3000_skipped', JSON.stringify(s.slice(-400))); }
+}
+
+function startFeed(){
+  if(feedStarted) return;
+  feedStarted = true;
+
+  document.getElementById('feedHead').innerHTML = `
+    <div class="feed-head">
+      <span class="fh-title">KÖNNTEST DU KENNEN</span>
+      <span class="fh-sub">nach deinem Geschmack</span>
+    </div>`;
+
+  loadFeedPage();
+
+  const sentinel = document.getElementById('feedSentinel');
+  if(sentinel && 'IntersectionObserver' in window){
+    feedObserver = new IntersectionObserver(entries=>{
+      if(entries[0].isIntersecting) loadFeedPage();
+    }, { rootMargin: '400px' });
+    feedObserver.observe(sentinel);
+  }
+}
+
+function feedExcludeList(){
+  // Everything already in the crew's library plus anything this person skipped.
+  return [...allMovies.map(m=>m.tmdb_id), ...skippedIds()];
+}
+
+function feedSeeds(){
+  // Only films this person personally liked — 7.0 and up.
+  return allMovies
+    .filter(m => m.ratings.some(r => r.user_id === me.id && r.rating >= 7))
+    .map(m => m.tmdb_id);
+}
+
+async function loadFeedPage(){
+  if(feedLoading || feedExhausted) return;
+  feedLoading = true;
+
+  const sentinel = document.getElementById('feedSentinel');
+  if(sentinel) sentinel.innerHTML = '<div class="spinner"></div>';
+
+  feedPage++;
+  try{
+    const res = await fetch('/api/tmdb/suggest', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ seeds: feedSeeds(), exclude: feedExcludeList(), page: feedPage })
+    });
+    const data = await res.json();
+    const fresh = (data.results || []).filter(m =>
+      !feedItems.some(f => f.tmdb_id === m.tmdb_id)
+    );
+
+    if(!fresh.length){
+      if(feedPage >= 8){ feedExhausted = true; }
+    } else {
+      feedItems.push(...fresh);
+      appendFeedCards(fresh);
+    }
+  }catch(e){
+    if(sentinel) sentinel.textContent = 'Vorschläge konnten nicht geladen werden.';
+    feedLoading = false;
+    return;
+  }
+
+  if(sentinel){
+    sentinel.innerHTML = feedExhausted ? 'Das war\'s erstmal.' : '';
+  }
+  feedLoading = false;
+}
+
+function appendFeedCards(items){
+  const list = document.getElementById('feedList');
+  const html = items.map((m,i)=>{
+    const year = (m.release_date||'').slice(0,4);
+    const bg = m.backdrop_path ? IMG_BIG+m.backdrop_path : (m.poster_path?IMG_BIG+m.poster_path:'');
+    return `
+    <div class="feed-card" id="feed-${m.tmdb_id}" style="animation-delay:${Math.min(i*40,240)}ms">
+      <div class="feed-poster" style="${bg?`background-image:url(${bg})`:''}" onclick='openMovie(${esc(JSON.stringify(m))})'>
+        <div class="pfade"></div>
+        ${m.vote_average?`<div class="feed-tmdb">★ ${m.vote_average.toFixed(1)}</div>`:''}
+      </div>
+      <div class="feed-body">
+        <h3 class="feed-title">${escapeHtml(m.title)}</h3>
+        <div class="feed-meta">${year}</div>
+        <p class="feed-overview">${escapeHtml(m.overview||'')}</p>
+        <div class="feed-actions">
+          <button class="fa-skip" onclick="skipFeed(${m.tmdb_id})">Kenn ich nicht</button>
+          <button class="fa-rate" onclick='rateFromFeed(${esc(JSON.stringify(m))})'>Hab ich gesehen</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  list.insertAdjacentHTML('beforeend', html);
+}
+
+function skipFeed(id){
+  addSkipped(id);
+  const el = document.getElementById('feed-'+id);
+  if(el){
+    el.style.transition = 'opacity .2s ease, transform .2s ease, max-height .3s ease, margin .3s ease';
+    el.style.opacity = '0';
+    el.style.transform = 'scale(.97)';
+    el.style.maxHeight = el.offsetHeight + 'px';
+    setTimeout(()=>{ el.style.maxHeight='0'; el.style.margin='0'; }, 60);
+    setTimeout(()=>el.remove(), 380);
+  }
+  feedItems = feedItems.filter(f=>f.tmdb_id !== id);
+}
+
+async function rateFromFeed(m){
+  // Pull full detail first so the saved record has genres, runtime, director.
+  let full = m;
+  try{
+    const res = await fetch('/api/tmdb/'+m.tmdb_id);
+    const detail = await res.json();
+    if(!detail.error) full = {...m, ...detail};
+  }catch(e){}
+  currentMovie = full;
+  document.getElementById('modalBg').classList.add('active');
+  startQuiz();
+}
+
+/* Repaints only the hero + open-task list. The feed below keeps its
+   scroll position and loaded pages. */
+function refreshHomeTasks(){
+  const hero = document.getElementById('taskHero');
+  if(!hero) return;
+
+  const open = allMovies.filter(m =>
+    m.rating_count > 0 && !m.ratings.some(r => r.user_id === me.id)
+  );
+  const myCount = allMovies.filter(m => m.ratings.some(r => r.user_id === me.id)).length;
+
+  hero.innerHTML = `
+    <div class="greet">${greeting()}, ${escapeHtml(me.name)}</div>
+    <div class="sub">${
+      open.length
+        ? 'Deine Crew hat Filme bewertet, bei denen du noch fehlst.'
+        : (myCount ? 'Alles abgearbeitet. Scroll weiter für Vorschläge.' : 'Leg los — bewerte Filme, die du schon kennst.')
+    }</div>
+    ${open.length ? `<div class="task-count">${open.length} offen</div>` : ''}
+  `;
+
+  renderActivity();
+  paintTaskList(open);
+}
+
+function greeting(){
+  const h = new Date().getHours();
+  if(h < 5)  return 'Noch wach';
+  if(h < 11) return 'Morgen';
+  if(h < 18) return 'Hi';
+  return 'Abend';
+}
+
+/* ---------- skeleton loaders ---------- */
+function skeletonGrid(n){
+  let html = '';
+  for(let i=0;i<n;i++){
+    html += `<div class="sk-card">
+      <div class="sk-poster skeleton"></div>
+      <div class="sk-line skeleton"></div>
+      <div class="sk-line skeleton short"></div>
+    </div>`;
+  }
+  return html;
+}
+
+/* ---------- search ---------- */
+document.getElementById('searchInput').addEventListener('input', e=>{
+  clearTimeout(searchTimer);
+  const q = e.target.value.trim();
+  searchTimer = setTimeout(()=> q ? doSearch(q) : loadPopular(), 350);
+});
+async function loadPopular(){
+  document.getElementById('searchLabel').textContent = 'Gerade beliebt';
+  document.getElementById('searchGrid').innerHTML = skeletonGrid(8);
+  const res = await fetch('/api/tmdb/popular');
+  const data = await res.json();
+  renderSearchGrid(data.results || []);
+}
+async function doSearch(q){
+  document.getElementById('searchLabel').textContent = 'Suchergebnisse für "'+q+'"';
+  document.getElementById('searchGrid').innerHTML = skeletonGrid(6);
+  const res = await fetch('/api/tmdb/search?q='+encodeURIComponent(q));
+  const data = await res.json();
+  renderSearchGrid(data.results || []);
+}
+function renderSearchGrid(results){
+  const grid = document.getElementById('searchGrid');
+  if(!results.length){ grid.innerHTML = '<div class="empty">Keine Treffer.</div>'; return; }
+  grid.innerHTML = results.map((m,i)=>{
+    const watched = allMovies.find(x=>x.tmdb_id===m.tmdb_id);
+    return `<div class="card" style="animation-delay:${Math.min(i*30,300)}ms" onclick='openMovie(${esc(JSON.stringify(m))})'>
+      ${watched?'<div class="watched-tick">gesehen</div>':''}
+      <div class="poster" style="${m.poster_path?`background-image:url(${IMG+m.poster_path})`:''}">${m.poster_path?'':escapeHtml(m.title)}</div>
+      <div class="card-body">
+        <p class="card-title">${escapeHtml(m.title)}</p>
+        <p class="card-year">${(m.release_date||'').slice(0,4)}</p>
+      </div></div>`;
+  }).join('');
+}
+
+/* ---------- wall ---------- */
+async function loadMovies(){
+  const res = await fetch('/api/movies');
+  const data = await res.json();
+  allMovies = data.movies || [];
+}
+function renderWall(){
+  const grid = document.getElementById('wallGrid');
+  if(!allMovies.length){ grid.innerHTML = '<div class="empty">Noch keine Filme bewertet. Geh auf "Suchen" und leg los.</div>'; return; }
+  grid.innerHTML = allMovies.map((m,i)=>`
+    <div class="card" style="animation-delay:${Math.min(i*30,300)}ms" onclick='openMovie(${esc(JSON.stringify(m))})'>
+      ${m.average!==null?`<div class="badge">★ ${m.average}</div>`:''}
+      <div class="poster" style="${m.poster_path?`background-image:url(${IMG+m.poster_path})`:''}">${m.poster_path?'':escapeHtml(m.title)}</div>
+      <div class="card-body">
+        <p class="card-title">${escapeHtml(m.title)}</p>
+        <p class="card-year">${(m.release_date||'').slice(0,4)} · ${m.rating_count} Bewertung${m.rating_count===1?'':'en'}</p>
+      </div></div>`).join('');
+}
+
+/* ---------- movie detail ---------- */
+async function openMovie(m){
+  let full = m;
+  if(!m.genres && !m.runtime){
+    const res = await fetch('/api/tmdb/'+m.tmdb_id);
+    const detail = await res.json();
+    if(!detail.error) full = {...m, ...detail};
+  }
+  currentMovie = full;
+  await renderDetail();
+  document.getElementById('modalBg').classList.add('active');
+}
+
+async function renderDetail(){
+  const full = currentMovie;
+  const res = await fetch('/api/ratings?movie_tmdb_id='+full.tmdb_id);
+  const data = await res.json();
+  const ratings = data.ratings || [];
+  const mine = ratings.find(r=>r.user_id===me.id);
+
+  let critic = null;
+  if(full.imdb_id){
+    try{
+      const cRes = await fetch('/api/omdb/'+full.imdb_id);
+      const cData = await cRes.json();
+      critic = cData.scores || null;
+    }catch(e){}
+  }
+
+  const hero = full.backdrop_path ? IMG_BIG+full.backdrop_path : (full.poster_path?IMG_BIG+full.poster_path:'');
+  const year = (full.release_date||'').slice(0,4);
+
+  const trailerBtn = full.trailer_key ? `
+    <button class="play-trailer-btn" onclick="event.stopPropagation();showTrailer('${full.trailer_key}')">
+      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      Trailer
+    </button>` : '';
+
+  const criticHtml = (critic && (critic.imdb || critic.rotten_tomatoes || critic.metascore)) ? `
+    <div class="critic-row">
+      ${critic.imdb?`<div class="critic-pill"><div class="cv">${critic.imdb}</div><div class="cl">IMDb</div></div>`:''}
+      ${critic.rotten_tomatoes?`<div class="critic-pill"><div class="cv">${critic.rotten_tomatoes}</div><div class="cl">Rotten Tomatoes</div></div>`:''}
+      ${critic.metascore?`<div class="critic-pill meta"><div class="cv">${critic.metascore}</div><div class="cl">Metascore</div></div>`:''}
+    </div>` : '';
+
+  const provHtml = providerBlock(full.providers);
+
+  const crewHtml = ratings.length ? ratings.map(r=>`
+      <div class="crew-row">
+        ${avatarHtml(r.user_id, r.name, r.color, 28)}
+        <span class="name">${escapeHtml(r.name)}</span>
+        <span class="score">${r.rating}</span>
+        ${r.note?`<span class="note">"${escapeHtml(r.note)}"</span>`:''}
+      </div>`).join('')
+    : `<p class="empty" style="padding:10px 0;">Noch keine Bewertung — sei der Erste.</p>`;
+
+  const yourBlock = mine ? `
+    <div class="your-score">
+      <div class="big">${mine.rating.toFixed(1)}</div>
+      <div>
+        <div class="lbl">Deine Wertung</div>
+        ${mine.note?`<div style="font-size:12px;color:var(--muted);font-style:italic;margin-top:3px;">"${escapeHtml(mine.note)}"</div>`:''}
+      </div>
+    </div>
+    <button class="btn btn-secondary" onclick="startQuiz()">Neu bewerten</button>`
+    : `<button class="btn btn-primary" onclick="startQuiz()">Bewerten</button>`;
+
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-grip"></div>
+    <div class="modal-hero" id="heroBox" style="${hero?`background-image:url(${hero})`:''}">
+      <div class="fade"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      ${trailerBtn}
+    </div>
+    <div class="modal-content">
+      <h2>${escapeHtml(full.title)}</h2>
+      <div class="meta-row">${year}${full.runtime?` · ${full.runtime} Min`:''}${full.genres?` · ${escapeHtml(full.genres)}`:''}${full.director?` · Regie: ${escapeHtml(full.director)}`:''}</div>
+      ${criticHtml}
+      ${provHtml}
+      <p class="overview">${escapeHtml(full.overview||'')}</p>
+      ${yourBlock}
+      <div style="margin-top:22px;">
+        <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Bewertungen der Crew</label>
+        <div style="margin-top:8px;">${crewHtml}</div>
+      </div>
+    </div>`;
+  attachSwipeToClose();
+}
+
+/* Streaming availability, Germany. Flatrate (abo) is what people actually
+   care about; rent/buy is shown as a plain line so it doesn't dominate. */
+const IMG_LOGO = 'https://image.tmdb.org/t/p/w92';
+
+function providerBlock(providers){
+  if(!providers) return '';
+  const flat = providers.flatrate || [];
+  const rent = providers.rent || [];
+  const buy = providers.buy || [];
+  if(!flat.length && !rent.length && !buy.length) return '';
+
+  const logos = (list)=> list.slice(0,6).map(p=>
+    `<img class="prov-logo" src="${IMG_LOGO+p.logo_path}" alt="${escapeHtml(p.name)}" title="${escapeHtml(p.name)}" loading="lazy">`
+  ).join('');
+
+  let html = '<div class="prov-block">';
+  if(flat.length){
+    html += `<span class="prov-label">Im Abo streamen</span>
+             <div class="prov-logos">${logos(flat)}</div>`;
+  } else if(rent.length || buy.length){
+    const list = rent.length ? rent : buy;
+    html += `<span class="prov-label">${rent.length?'Leihen':'Kaufen'}</span>
+             <div class="prov-logos">${logos(list)}</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function showTrailer(key){
+  const hero = document.getElementById('heroBox');
+  if(!hero) return;
+  hero.innerHTML = `
+    <div class="trailer-embed" style="position:absolute;inset:0;border-radius:0;">
+      <iframe src="https://www.youtube.com/embed/${key}?autoplay=1&playsinline=1&rel=0"
+        allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    <button class="modal-close" onclick="closeModal()" style="z-index:2;">✕</button>`;
+}
+
+function closeModal(){ document.getElementById('modalBg').classList.remove('active'); }
+
+/* swipe the modal down on the grip handle to dismiss — small iOS-native touch */
+function attachSwipeToClose(){
+  const grip = document.querySelector('.modal-grip');
+  const modal = document.getElementById('modal');
+  if(!grip || !modal) return;
+  let startY = 0, dragging = false;
+  grip.addEventListener('touchstart', e=>{ startY = e.touches[0].clientY; dragging = true; modal.style.transition='none'; }, {passive:true});
+  grip.addEventListener('touchmove', e=>{
+    if(!dragging) return;
+    const dy = e.touches[0].clientY - startY;
+    if(dy>0) modal.style.transform = `translateY(${dy}px)`;
+  }, {passive:true});
+  grip.addEventListener('touchend', e=>{
+    if(!dragging) return;
+    dragging = false;
+    modal.style.transition = '';
+    const dy = e.changedTouches[0].clientY - startY;
+    if(dy > 100){ closeModal(); }
+    modal.style.transform = '';
+  });
+}
+
+/* ---------- guided rating flow ---------- */
+function startQuiz(){
+  quiz = { step:0, scores:{}, adjust:0, note:'' };
+  renderQuiz();
+}
+
+function renderQuiz(){
+  const total = DIMENSIONS.length;
+  if(quiz.step >= total){ renderQuizResult(); return; }
+
+  const d = DIMENSIONS[quiz.step];
+  const chosen = quiz.scores[d.key];
+  const pct = (quiz.step / total) * 100;
+
+  document.getElementById('modal').innerHTML = `
+    <div class="quiz">
+      <div class="quiz-top">
+        <span class="quiz-step">Frage ${quiz.step+1} von ${total}</span>
+        <button class="modal-close" style="position:static;" onclick="closeModal()">✕</button>
+      </div>
+      <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+
+      <div class="quiz-dim">${d.label} · ${Math.round(d.weight*100)}%</div>
+      <p class="quiz-q">${d.question}</p>
+
+      <div class="opts">
+        ${d.options.map(o=>`
+          <button class="opt ${chosen===o.v?'chosen':''}" onclick="answer('${d.key}', ${o.v})">
+            <span class="pip"></span><span>${o.t}</span>
+          </button>`).join('')}
+      </div>
+
+      <div class="quiz-nav">
+        ${quiz.step>0?`<button class="btn-ghost" onclick="quizBack()">← Zurück</button>`:'<span></span>'}
+        <span class="quiz-step">${quiz.step+1}/${total}</span>
+      </div>
+    </div>`;
+}
+
+function answer(key, value){
+  quiz.scores[key] = value;
+  quiz.step++;
+  renderQuiz();
+}
+function quizBack(){
+  if(quiz.step>0){ quiz.step--; renderQuiz(); }
+}
+
+function renderQuizResult(){
+  const base = computeScore(quiz.scores, 0);
+  const final = computeScore(quiz.scores, quiz.adjust);
+
+  document.getElementById('modal').innerHTML = `
+    <div class="quiz">
+      <div class="quiz-top">
+        <span class="quiz-step">Ergebnis</span>
+        <button class="modal-close" style="position:static;" onclick="closeModal()">✕</button>
+      </div>
+      <div class="progress"><div class="progress-fill" style="width:100%"></div></div>
+
+      <div class="result-score">
+        <div class="num" id="finalNum">0.0</div>
+        <div class="cap">${escapeHtml(currentMovie.title)}</div>
+      </div>
+
+      <div class="breakdown">
+        ${DIMENSIONS.map(d=>`
+          <div class="bd-row">
+            <span class="bn">${d.label}</span>
+            <span class="bd-track"><span class="bd-fill" id="bd-${d.key}" style="width:0%"></span></span>
+            <span class="bv">${quiz.scores[d.key]}</span>
+          </div>`).join('')}
+      </div>
+
+      <div class="adjust">
+        <label>Bauchgefühl</label>
+        <p class="hint">Berechnet wurde ${base.toFixed(1)}. Wenn sich das falsch anfühlt, korrigier es hier um bis zu einen Punkt — manche Filme sind mehr als die Summe ihrer Teile.</p>
+        <input type="range" min="-1" max="1" step="0.1" value="${quiz.adjust}" oninput="onAdjust(this.value)">
+        <div class="adj-val" id="adjVal">${quiz.adjust>0?'+':''}${Number(quiz.adjust).toFixed(1)}</div>
+      </div>
+
+      <textarea id="quizNote" placeholder="Ein Satz zum Film (optional)">${escapeHtml(quiz.note)}</textarea>
+
+      <button class="btn btn-primary" onclick="saveQuiz()">Bewertung speichern</button>
+      <button class="btn-ghost" style="width:100%;margin-top:4px;" onclick="quizBack()">← Letzte Frage ändern</button>
+    </div>`;
+
+  // animate bars in, then count up the final number
+  requestAnimationFrame(()=>{
+    DIMENSIONS.forEach(d=>{
+      const el = document.getElementById('bd-'+d.key);
+      if(el) el.style.width = (quiz.scores[d.key]*10)+'%';
+    });
+    countUpTo(final);
+  });
+}
+
+function countUpTo(target){
+  const el = document.getElementById('finalNum');
+  if(!el) return;
+  const duration = 500;
+  const start = performance.now();
+  function frame(now){
+    const t = Math.min(1, (now-start)/duration);
+    const eased = 1 - Math.pow(1-t, 3);
+    el.textContent = (target*eased).toFixed(1);
+    if(t<1) requestAnimationFrame(frame);
+    else el.textContent = target.toFixed(1);
+  }
+  requestAnimationFrame(frame);
+}
+
+function onAdjust(v){
+  quiz.adjust = parseFloat(v);
+  const final = computeScore(quiz.scores, quiz.adjust);
+  document.getElementById('finalNum').textContent = final.toFixed(1);
+  document.getElementById('adjVal').textContent = (quiz.adjust>0?'+':'') + quiz.adjust.toFixed(1);
+}
+
+async function saveQuiz(){
+  const noteEl = document.getElementById('quizNote');
+  quiz.note = noteEl ? noteEl.value.trim() : '';
+  const rating = computeScore(quiz.scores, quiz.adjust);
+
+  const res = await fetch('/api/ratings', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      user_id: me.id,
+      movie: currentMovie,
+      rating,
+      note: quiz.note,
+      scores: { ...quiz.scores, adjust: quiz.adjust }
+    })
+  });
+  const data = await res.json();
+  if(data.error){ toast(data.error); return; }
+
+  toast('Gespeichert: ' + rating.toFixed(1));
+  const ratedId = currentMovie.tmdb_id;
+  quiz = null;
+  await loadMovies();
+  renderWall();
+
+  // Drop it from the suggestion feed and refresh the open-tasks list
+  // without tearing down the feed the person is scrolling through.
+  const fc = document.getElementById('feed-' + ratedId);
+  if(fc) fc.remove();
+  feedItems = feedItems.filter(f => f.tmdb_id !== ratedId);
+  refreshHomeTasks();
+
+  await renderDetail();
+}
+
+/* ---------- stats ---------- */
+/* Ranking, collapsed to five by default. */
+let topExpanded = false;
+
+function paintTopList(rated){
+  const box = document.getElementById('topList');
+  if(!box) return;
+
+  const sorted = [...rated].sort((a,b)=>b.average-a.average);
+  if(!sorted.length){ box.innerHTML = '<div class="empty">Noch keine Daten.</div>'; return; }
+
+  const shown = topExpanded ? sorted : sorted.slice(0,5);
+
+  box.innerHTML = shown.map((m,i)=>`
+    <div class="lb-row" onclick='openMovie(${esc(JSON.stringify(m))})' style="cursor:pointer;">
+      <div class="lb-rank">${i+1}</div>
+      <div class="lb-poster" style="${m.poster_path?`background-image:url(${IMG+m.poster_path})`:''}"></div>
+      <div class="lb-info">
+        <div class="lb-title">${escapeHtml(m.title)}</div>
+        <div class="lb-sub">${m.rating_count} Bewertung${m.rating_count===1?'':'en'}</div>
+      </div>
+      <div class="lb-score">${m.average}</div>
+    </div>`).join('')
+    + (sorted.length > 5 ? `
+      <button class="expand-btn" onclick="toggleTopList()">
+        ${topExpanded ? 'Weniger anzeigen' : `Alle ${sorted.length} Filme anzeigen`}
+      </button>` : '');
+}
+
+function toggleTopList(){
+  topExpanded = !topExpanded;
+  renderStats();
+  if(topExpanded){
+    // keep the button in view after the list grows
+    requestAnimationFrame(()=>{
+      const b = document.querySelector('#topList .expand-btn');
+      if(b) b.scrollIntoView({block:'nearest'});
+    });
+  }
+}
+
+function renderStats(){
+  const rated = allMovies.filter(m=>m.rating_count>0);
+  const totalRatings = rated.reduce((s,m)=>s+m.rating_count,0);
+  const overallAvg = totalRatings ? (rated.reduce((s,m)=>s+m.average*m.rating_count,0)/totalRatings) : 0;
+
+  const userMap = {};
+  rated.forEach(m=>m.ratings.forEach(r=>{
+    (userMap[r.user_id] ||= {name:r.name, color:r.color, sum:0, count:0}).sum += r.rating;
+    userMap[r.user_id].count += 1;
+  }));
+  const users = Object.values(userMap).map(u=>({...u, avg:u.sum/u.count})).sort((a,b)=>b.avg-a.avg);
+
+  document.getElementById('statCards').innerHTML = `
+    <div class="stat-card"><div class="num">${rated.length}</div><div class="lbl">Filme gesehen</div></div>
+    <div class="stat-card"><div class="num">${totalRatings}</div><div class="lbl">Bewertungen</div></div>
+    <div class="stat-card"><div class="num">${overallAvg?overallAvg.toFixed(1):'–'}</div><div class="lbl">Ø Crew-Wertung</div></div>
+    <div class="stat-card"><div class="num">${users.length}</div><div class="lbl">Mitglieder</div></div>`;
+
+  paintTopList(rated);
+
+  document.getElementById('userBars').innerHTML = users.length ? users.map(u=>`
+    <div class="bar-row">
+      <div class="bname">${escapeHtml(u.name)}</div>
+      <div class="bar-track"><div class="bar-fill" id="ub-${u.name.replace(/[^a-zA-Z0-9]/g,'')}" style="background:${u.color}"></div></div>
+      <div class="bval">${u.avg.toFixed(1)}</div>
+    </div>`).join('') : '<div class="empty">Noch keine Daten.</div>';
+
+  requestAnimationFrame(()=>{
+    users.forEach(u=>{
+      const el = document.getElementById('ub-'+u.name.replace(/[^a-zA-Z0-9]/g,''));
+      if(el) el.style.width = (u.avg/10*100).toFixed(0)+'%';
+    });
+  });
+}
+
+/* ---------- helpers ---------- */
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+function esc(json){ return json.replace(/'/g,'&#39;'); }
+
+loadUser();
+initUpdateCheck();
+</script>
+</body>
+</html>
