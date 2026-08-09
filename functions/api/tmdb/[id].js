@@ -48,8 +48,10 @@ export async function onRequestGet({ params, env }) {
     genres: (m.genres || []).map(g => g.name).join(', '),
     runtime: m.runtime,
     director: director ? director.name : null,
-    trailer_key: trailer ? trailer.key : null
+        trailer_key: trailer ? trailer.key : null,
+    imdb_id: m.external_ids?.imdb_id || null
   });
+
 }
 
 function pickTrailer(videos) {
