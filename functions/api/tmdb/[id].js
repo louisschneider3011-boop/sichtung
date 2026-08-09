@@ -10,7 +10,8 @@ export async function onRequestGet({ params, env }) {
 
   const tmdbUrl = new URL(`https://api.themoviedb.org/3/movie/${id}`);
   tmdbUrl.searchParams.set('language', 'de-DE');
-  tmdbUrl.searchParams.set('append_to_response', 'credits,videos');
+  tmdbUrl.searchParams.set('append_to_response', 'credits,videos,external_ids');
+
 
   const res = await fetch(tmdbUrl, {
     headers: { Authorization: `Bearer ${env.TMDB_API_KEY}` }
