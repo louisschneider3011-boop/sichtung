@@ -5,4 +5,4 @@ compatibility_date = "2024-09-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "sichtung-db"
-database_id = "REPLACE_WITH_YOUR_DATABASE_ID"
+database_id = "54c25528-c775-4664-970b-2dea8231e342"
