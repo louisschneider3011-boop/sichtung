@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Check-in — SICHTUNG</title>
+<style>
+  :root{--gold:#C49A3C;--gold2:#E8CC78;--dark:#06070d;--dark2:#11141f;--text:#f5f3ef;--sub:#9a9690}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--dark);color:var(--text);font-family:-apple-system,system-ui,sans-serif;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem 1.4rem
+  }
+  .box{max-width:400px;width:100%}
+  .icon{font-size:3rem;margin-bottom:1.2rem}
+  h1{font-size:1.5rem;margin-bottom:.6rem;font-weight:600}
+  .sub{color:var(--sub);font-size:.9rem;margin-bottom:2rem;line-height:1.6}
+  .status{padding:1.4rem;border-radius:14px;background:var(--dark2);border:1px solid rgba(196,154,60,.2);margin-bottom:1.4rem}
+  .checked-list{text-align:left}
+  .checked-list-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--gold2);margin-bottom:.6rem}
+  .checked-item{display:flex;align-items:center;gap:.6rem;padding:.5rem 0;font-size:.9rem;border-bottom:1px solid rgba(255,255,255,.06)}
+  .checked-item:last-child{border-bottom:none}
+  .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  input, button{
+    width:100%;padding:.85rem 1rem;border-radius:10px;font-size:.95rem;border:1px solid rgba(255,255,255,.15);
+    background:var(--dark2);color:var(--text);margin-bottom:.8rem
+  }
+  button{background:var(--gold);color:#1a1300;border:none;font-weight:600;cursor:pointer}
+  button:disabled{opacity:.5}
+  .spinner{width:28px;height:28px;border:3px solid rgba(196,154,60,.2);border-top-color:var(--gold);
+    border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="box" id="app">
+  <div class="spinner"></div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const token = params.get('token');
+const app = document.getElementById('app');
+
+async function loginAndCheckin(name) {
+  app.innerHTML = '<div class="spinner"></div>';
+  try {
+    // Schritt 1: über den bestehenden Login-Endpunkt einloggen / anlegen
+    const loginRes = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    const loginData = await loginRes.json();
+
+    if (!loginRes.ok) {
+      app.innerHTML = `
+        <div class="icon">😕</div>
+        <h1>Ups</h1>
+        <p class="sub">${loginData.error || 'Login fehlgeschlagen.'}</p>
+        <button onclick="showManualForm()">Nochmal versuchen</button>`;
+      return;
+    }
+
+    const user = loginData.user;
+
+    // Schritt 2: Check-in für dieses Event
+    const checkinRes = await fetch('/api/events/checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, userId: user.id })
+    });
+    const checkinData = await checkinRes.json();
+
+    if (!checkinRes.ok) {
+      app.innerHTML = `
+        <div class="icon">😕</div>
+        <h1>Event nicht gefunden</h1>
+        <p class="sub">${checkinData.error || 'Der QR-Code ist ungültig oder abgelaufen.'}</p>`;
+      return;
+    }
+
+    const listHtml = checkinData.checkedIn.map(u => `
+      <div class="checked-item">
+        <span class="dot" style="background:${u.color || '#C49A3C'}"></span>
+        ${u.name}
+      </div>`).join('');
+
+    app.innerHTML = `
+      <div class="icon">🍿</div>
+      <h1>Willkommen, ${user.name}!</h1>
+      <p class="sub">Du bist eingecheckt. Viel Spaß beim Film!</p>
+      <div class="status">
+        <div class="checked-list">
+          <div class="checked-list-title">Schon da (${checkinData.checkedIn.length})</div>
+          ${listHtml}
+        </div>
+      </div>`;
+  } catch (e) {
+    app.innerHTML = `
+      <div class="icon">⚠️</div>
+      <h1>Fehler</h1>
+      <p class="sub">Check-in ist fehlgeschlagen. Versuch es nochmal.</p>
+      <button onclick="location.reload()">Erneut versuchen</button>`;
+  }
+}
+
+function showManualForm() {
+  app.innerHTML = `
+    <div class="icon">🎬</div>
+    <h1>Kurz einchecken</h1>
+    <p class="sub">Wie heißt du?</p>
+    <input id="nameInput" type="text" placeholder="Dein Name" autocomplete="off" maxlength="40">
+    <button id="submitBtn" onclick="manualSubmit()">Einchecken →</button>`;
+  const inp = document.getElementById('nameInput');
+  inp.focus();
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') manualSubmit(); });
+}
+
+function manualSubmit() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) return;
+  loginAndCheckin(name);
+}
+
+if (!token) {
+  app.innerHTML = `
+    <div class="icon">🔗</div>
+    <h1>Ungültiger Link</h1>
+    <p class="sub">Diesem Check-in-Link fehlt der Event-Code.</p>`;
+} else {
+  showManualForm();
+}
+</script>
+</body>
+</html>
