@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kinoabend erstellen — SICHTUNG</title>
+<style>
+  :root{--gold:#C49A3C;--gold2:#E8CC78;--dark:#06070d;--dark2:#11141f;--text:#f5f3ef;--sub:#9a9690}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--dark);color:var(--text);font-family:-apple-system,system-ui,sans-serif;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem 1.4rem
+  }
+  .box{max-width:420px;width:100%}
+  .icon{font-size:2.6rem;margin-bottom:1rem}
+  h1{font-size:1.4rem;margin-bottom:.4rem;font-weight:600}
+  .sub{color:var(--sub);font-size:.88rem;margin-bottom:1.8rem;line-height:1.6}
+  input, button{
+    width:100%;padding:.85rem 1rem;border-radius:10px;font-size:.95rem;border:1px solid rgba(255,255,255,.15);
+    background:var(--dark2);color:var(--text);margin-bottom:.8rem
+  }
+  label{display:block;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--gold2);margin:0 0 .3rem .1rem}
+  button{background:var(--gold);color:#1a1300;border:none;font-weight:600;cursor:pointer;margin-top:.4rem}
+  .qr-box{background:#fff;padding:1.4rem;border-radius:16px;display:inline-block;margin-bottom:1.4rem}
+  .qr-box img{display:block;width:260px;height:260px}
+  .link-row{background:var(--dark2);border:1px solid rgba(196,154,60,.2);border-radius:10px;
+    padding:.7rem .9rem;font-size:.78rem;color:var(--sub);word-break:break-all;margin-bottom:1.2rem}
+  .spinner{width:24px;height:24px;border:3px solid rgba(196,154,60,.2);border-top-color:var(--gold);
+    border-radius:50%;animation:spin .8s linear infinite;margin:1rem auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="box" id="app">
+  <div class="icon">🎬</div>
+  <h1>Kinoabend erstellen</h1>
+  <p class="sub">Titel eintragen, Event erstellen &mdash; der QR-Code erscheint sofort. Zeig ihn auf dem Beamer, damit alle sich einchecken k&ouml;nnen.</p>
+
+  <label for="hostName">Dein Name</label>
+  <input id="hostName" type="text" placeholder="z.B. Louis" autocomplete="off" maxlength="40">
+
+  <label for="title">Filmabend-Titel</label>
+  <input id="title" type="text" placeholder="z.B. Interstellar-Abend" autocomplete="off" maxlength="80">
+
+  <label for="eventDate">Datum (optional)</label>
+  <input id="eventDate" type="date">
+
+  <button onclick="createEvent()">QR-Code erstellen →</button>
+</div>
+
+<script>
+const app = document.getElementById('app');
+
+async function createEvent() {
+  const hostName = document.getElementById('hostName').value.trim();
+  const title = document.getElementById('title').value.trim();
+  const eventDate = document.getElementById('eventDate').value;
+
+  if (!hostName || !title) {
+    alert('Bitte Name und Titel eingeben.');
+    return;
+  }
+
+  app.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    // Erst einloggen, um eine userId zu bekommen (nutzt bestehenden Login)
+    const loginRes = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: hostName })
+    });
+    const loginData = await loginRes.json();
+    if (!loginRes.ok) throw new Error(loginData.error || 'Login fehlgeschlagen');
+
+    // Event anlegen
+    const evRes = await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, eventDate: eventDate || null, userId: loginData.user.id })
+    });
+    const evData = await evRes.json();
+    if (!evRes.ok) throw new Error(evData.error || 'Event konnte nicht erstellt werden');
+
+    const checkinUrl = `${window.location.origin}/checkin.html?token=${evData.token}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(checkinUrl)}`;
+
+    app.innerHTML = `
+      <div class="icon">🍿</div>
+      <h1>${title}</h1>
+      <p class="sub">QR-Code zeigen &mdash; auf dem Beamer, Handy oder ausgedruckt. Jeder, der ihn scannt, wird automatisch eingecheckt.</p>
+      <div class="qr-box"><img src="${qrUrl}" alt="QR-Code"></div>
+      <div class="link-row">${checkinUrl}</div>
+      <button onclick="location.reload()">Neuen Kinoabend erstellen</button>`;
+  } catch (e) {
+    app.innerHTML = `
+      <div class="icon">⚠️</div>
+      <h1>Fehler</h1>
+      <p class="sub">${e.message}</p>
+      <button onclick="location.reload()">Nochmal versuchen</button>`;
+  }
+}
+</script>
+</body>
+</html>
