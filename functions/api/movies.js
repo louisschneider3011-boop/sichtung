@@ -21,35 +21,9 @@ export async function onRequestGet({ env }) {
 
   const DIMS = ['story', 'craft', 'impact', 'echo'];
 
-  // --- Bayesian-gewichteter Score -------------------------------------
-  // Ein Film mit nur 1 Bewertung soll nicht automatisch über Filmen mit
-  // mehreren Bewertungen stehen. CONFIDENCE gibt an, wie viele "virtuelle"
-  // Durchschnittsbewertungen jeder Film zusätzlich bekommt, bevor er
-  // vollständig nach seinem eigenen Schnitt sortiert wird.
-  // Bei 6 Crew-Mitgliedern ist m=3 (halbe Crew) ein guter Startwert.
-  const CONFIDENCE = 3;
-  // Ab wie vielen Bewertungen ein Film als "bestätigt" (Konsens) gilt.
-  const MIN_CONFIRMED = 2;
-
-  // Referenzwert C = Durchschnitt der Film-Durchschnitte (nicht aller
-  // Einzelbewertungen), damit vielbewertete Filme den Referenzwert nicht
-  // nach oben oder unten verzerren.
-  const perMovieAverages = movies
-    .map(m => byMovie[m.tmdb_id])
-    .filter(rs => rs && rs.length)
-    .map(rs => rs.reduce((s, r) => s + r.rating, 0) / rs.length);
-
-  const globalAverage = perMovieAverages.length
-    ? perMovieAverages.reduce((s, a) => s + a, 0) / perMovieAverages.length
-    : 0;
-
   const enriched = movies.map(m => {
     const rs = byMovie[m.tmdb_id] || [];
     const avg = rs.length ? rs.reduce((s, r) => s + r.rating, 0) / rs.length : null;
-
-    const weighted = rs.length
-      ? (rs.length * avg + CONFIDENCE * globalAverage) / (rs.length + CONFIDENCE)
-      : null;
 
     // Average each dimension across everyone who used the guided flow.
     const dimSums = {};
@@ -75,8 +49,6 @@ export async function onRequestGet({ env }) {
     return {
       ...m,
       average: avg !== null ? Math.round(avg * 10) / 10 : null,
-      weighted_average: weighted !== null ? Math.round(weighted * 100) / 100 : null,
-      confirmed: rs.length >= MIN_CONFIRMED,
       rating_count: rs.length,
       dimensions: Object.keys(dimensions).length ? dimensions : null,
       ratings: rs.map(r => ({
@@ -88,15 +60,6 @@ export async function onRequestGet({ env }) {
         scores: r.scores ? safeParse(r.scores) : null
       }))
     };
-  });
-
-  // Serverseitige Sortierung: bestätigte Filme (>= MIN_CONFIRMED Bewertungen)
-  // zuerst, sortiert nach weighted_average. Unbestätigte danach, ebenfalls
-  // nach weighted_average, damit die Reihenfolge innerhalb der Gruppe
-  // trotzdem sinnvoll ist.
-  enriched.sort((a, b) => {
-    if (a.confirmed !== b.confirmed) return a.confirmed ? -1 : 1;
-    return (b.weighted_average ?? -1) - (a.weighted_average ?? -1);
   });
 
   return Response.json({ movies: enriched });
