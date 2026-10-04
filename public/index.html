@@ -1095,19 +1095,26 @@ function renderVote(){
   }
 
   const p = currentPoll;
+  const cap = p.votes_per_person || 1;
   const totalVotes = p.movies.reduce((s,m)=>s+m.vote_count,0);
   const maxVotes = Math.max(1, ...p.movies.map(m=>m.vote_count));
   const sorted = [...p.movies].sort((a,b)=> b.vote_count - a.vote_count);
+
+  // A movie counts as "mine" if any of its votes belongs to me — with
+  // multiple votes per person, p.my_vote (a single id, kept server-side
+  // for backward compatibility) isn't enough any more.
+  const myVoteIds = new Set(p.movies.filter(m => m.votes.some(v=>v.user_id===me.id)).map(m=>m.id));
+  const used = myVoteIds.size;
 
   box.innerHTML = `
     <div class="poll-head">
       <h2>${escapeHtml(p.title)}</h2>
       ${p.movie_night_at ? `<div class="poll-when">🎬 ${escapeHtml(formatPollWhen(p.movie_night_at))}</div>` : ''}
-      <p class="poll-sub">${totalVotes} Stimme${totalVotes===1?'':'n'} insgesamt${p.allow_suggestions?' · jeder kann Filme vorschlagen':''}</p>
+      <p class="poll-sub">Du hast ${used} von ${cap} Stimme${cap===1?'':'n'} vergeben · ${totalVotes} insgesamt${p.allow_suggestions?' · jeder kann Filme vorschlagen':''}</p>
       ${amAdmin ? `<div style="margin-top:10px;"><button class="poll-admin-btn" onclick="openPollAdmin()">Verwalten</button></div>` : ''}
     </div>
     ${sorted.map(m=>{
-      const mine = p.my_vote === m.id;
+      const mine = myVoteIds.has(m.id);
       const pct = Math.round(m.vote_count / maxVotes * 100);
       const genres = (m.genres||'').split(',').map(g=>g.trim()).filter(Boolean);
       const slim = { tmdb_id:m.tmdb_id, title:m.title, poster_path:m.poster_path, release_date:m.release_date };
@@ -1124,7 +1131,7 @@ function renderVote(){
           ${m.overview?`<div class="vote-overview">${escapeHtml(m.overview)}</div>`:''}
           <div class="vote-bar"><div class="vote-bar-fill" style="width:${pct}%"></div></div>
           <div class="vote-actions">
-            <button class="vote-btn ${mine?'on':''}" onclick="${mine?'retractVote()':`castVote(${m.id})`}">${mine?'✓ Deine Stimme':'Abstimmen'}</button>
+            <button class="vote-btn ${mine?'on':''}" onclick="castVote(${m.id})">${mine?'✓ Deine Stimme':'Abstimmen'}</button>
             <div class="vote-count">${m.vote_count}</div>
             ${m.trailer_key?`<button class="trailer-btn" onclick="openTrailer('${m.trailer_key}')" title="Trailer">▶</button>`:''}
             ${amAdmin?`<button class="poll-remove" onclick="removePollMovie(${m.id})" title="Entfernen">✕</button>`:''}
@@ -1156,6 +1163,9 @@ function pollHistoryHtml(){
       </div>`).join('')}`;
 }
 
+// Toggles the vote on one movie: tapping a movie you've already voted for
+// removes that vote, tapping another one adds it (up to the poll's cap) —
+// the server decides which, this just reflects whatever it says.
 async function castVote(pollMovieId){
   try{
     const res = await fetch('/api/polls/vote', {
@@ -1165,16 +1175,6 @@ async function castVote(pollMovieId){
     const data = await res.json();
     if(data.error){ toast(data.error); return; }
   }catch(e){ toast('Konnte nicht gespeichert werden'); return; }
-  await loadPoll();
-}
-
-async function retractVote(){
-  try{
-    await fetch('/api/polls/vote', {
-      method:'DELETE', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ user_id: me.id, poll_id: currentPoll.id })
-    });
-  }catch(e){}
   await loadPoll();
 }
 
@@ -1206,6 +1206,10 @@ function openPollAdmin(){
       <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;">Wann</label>
       <input id="pollWhen" type="datetime-local" value="${p?.movie_night_at?escapeHtml(p.movie_night_at):''}"
         style="width:100%;padding:13px 14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-family:'Inter';font-size:14px;margin-bottom:14px;">
+      <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;">Stimmen pro Person</label>
+      <input id="pollVotesPerPerson" type="number" inputmode="numeric" min="1" max="20"
+        value="${p?.votes_per_person || 1}"
+        style="width:100%;padding:13px 14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-family:'Inter';font-size:14px;margin-bottom:14px;">
       <div class="pf-row" style="cursor:pointer;margin-bottom:14px;" onclick="this.querySelector('input').click()">
         <div class="pf-ic">💡</div>
         <div class="pf-tx"><div class="pf-v">Vorschläge erlauben</div><div class="pf-s">Jeder kann Filme hinzufügen</div></div>
@@ -1223,7 +1227,8 @@ function readPollForm(){
   return {
     title: document.getElementById('pollTitle').value.trim(),
     movie_night_at: document.getElementById('pollWhen').value || null,
-    allow_suggestions: document.getElementById('pollAllowSuggest').checked
+    allow_suggestions: document.getElementById('pollAllowSuggest').checked,
+    votes_per_person: Math.max(1, Math.min(20, parseInt(document.getElementById('pollVotesPerPerson').value, 10) || 1))
   };
 }
 
