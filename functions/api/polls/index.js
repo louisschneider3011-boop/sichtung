@@ -61,7 +61,7 @@ export async function onRequestGet({ request, env }) {
 
 export async function onRequestPost({ request, env }) {
   const body = await request.json().catch(() => ({}));
-  const { user_id, title, movie_night_at, allow_suggestions } = body;
+  const { user_id, title, movie_night_at, allow_suggestions, votes_per_person } = body;
 
   if (!(await isAdmin(env, user_id))) {
     return Response.json({ error: 'Nur der Admin kann eine Abstimmung starten' }, { status: 403 });
@@ -75,17 +75,19 @@ export async function onRequestPost({ request, env }) {
     return Response.json({ error: 'Es laeuft noch eine Abstimmung — die muss zuerst beendet werden' }, { status: 409 });
   }
 
+  const votesCap = Math.max(1, Math.min(20, parseInt(votes_per_person, 10) || 1));
+
   const res = await env.DB.prepare(
-    `INSERT INTO polls (title, movie_night_at, allow_suggestions, created_by)
-     VALUES (?, ?, ?, ?)`
-  ).bind(title.trim(), movie_night_at || null, allow_suggestions ? 1 : 0, user_id).run();
+    `INSERT INTO polls (title, movie_night_at, allow_suggestions, votes_per_person, created_by)
+     VALUES (?, ?, ?, ?, ?)`
+  ).bind(title.trim(), movie_night_at || null, allow_suggestions ? 1 : 0, votesCap, user_id).run();
 
   return Response.json({ ok: true, poll_id: res.meta.last_row_id });
 }
 
 export async function onRequestPut({ request, env }) {
   const body = await request.json().catch(() => ({}));
-  const { user_id, poll_id, title, movie_night_at, allow_suggestions } = body;
+  const { user_id, poll_id, title, movie_night_at, allow_suggestions, votes_per_person } = body;
 
   if (!(await isAdmin(env, user_id))) {
     return Response.json({ error: 'Nur der Admin kann das aendern' }, { status: 403 });
@@ -94,10 +96,12 @@ export async function onRequestPut({ request, env }) {
     return Response.json({ error: 'poll_id erforderlich' }, { status: 400 });
   }
 
+  const votesCap = Math.max(1, Math.min(20, parseInt(votes_per_person, 10) || 1));
+
   await env.DB.prepare(
-    `UPDATE polls SET title = ?, movie_night_at = ?, allow_suggestions = ?
+    `UPDATE polls SET title = ?, movie_night_at = ?, allow_suggestions = ?, votes_per_person = ?
      WHERE id = ? AND status = 'open'`
-  ).bind(title.trim(), movie_night_at || null, allow_suggestions ? 1 : 0, poll_id).run();
+  ).bind(title.trim(), movie_night_at || null, allow_suggestions ? 1 : 0, votesCap, poll_id).run();
 
   return Response.json({ ok: true });
 }
