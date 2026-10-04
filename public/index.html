@@ -182,7 +182,10 @@
   .vote-btn{flex:1;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);
     border-radius:10px;padding:9px 10px;font-family:'Inter';font-weight:700;font-size:12.5px;cursor:pointer;}
   .vote-btn.on{background:rgba(232,163,61,.16);border-color:var(--amber);color:var(--amber);}
-  .trailer-btn{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 8px;flex-shrink:0;}
+  .trailer-btn-full{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px;
+    background:rgba(232,163,61,.12);border:1px solid rgba(232,163,61,.45);color:var(--amber);
+    border-radius:10px;padding:11px;font-family:'Inter';font-weight:700;font-size:13.5px;cursor:pointer;}
+  .trailer-btn-full:active{transform:scale(.98);}
   .vote-count{font-family:'Bebas Neue';font-size:20px;color:var(--amber);min-width:22px;text-align:center;flex-shrink:0;}
   .vote-bar{height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden;margin-bottom:9px;}
   .vote-bar-fill{height:100%;background:var(--amber);border-radius:2px;transition:width .3s var(--ease);}
@@ -1053,6 +1056,46 @@ function enterVoteMode(){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-vote').classList.add('active');
   loadPoll();
+  maybeShowVoteIntro();
+}
+
+/* Mini walkthrough for just this area, shown once per device — separate
+   from the full app tour, since this screen's buttons didn't exist yet
+   when that one was written. */
+const VOTE_INTRO_KEY = 'sichtung_vote_intro_seen';
+
+function maybeShowVoteIntro(){
+  if(localStorage.getItem(VOTE_INTRO_KEY)) return;
+  showVoteIntro();
+}
+
+function showVoteIntro(){
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-grip"></div>
+    <div class="modal-content" style="padding-top:20px;">
+      <h3 style="font-family:'Bebas Neue';font-size:24px;margin:0 0 4px;">🗳️ So funktioniert's</h3>
+      <div class="sub" style="margin-bottom:16px;">Kurz erklärt, dann kann's losgehen.</div>
+      <div class="pf-row" style="margin-bottom:8px;cursor:default;">
+        <div class="pf-ic">👆</div>
+        <div class="pf-tx"><div class="pf-v">Abstimmen</div><div class="pf-s">Auf einen Film tippen gibt ihm deine Stimme — nochmal tippen nimmt sie zurück.</div></div>
+      </div>
+      <div class="pf-row" style="margin-bottom:8px;cursor:default;">
+        <div class="pf-ic">▶</div>
+        <div class="pf-tx"><div class="pf-v">Trailer ansehen</div><div class="pf-s">Zeigt den Trailer direkt hier in der App.</div></div>
+      </div>
+      <div class="pf-row" style="margin-bottom:8px;cursor:default;">
+        <div class="pf-ic">➕</div>
+        <div class="pf-tx"><div class="pf-v">Film vorschlagen</div><div class="pf-s">Eigenen Vorschlag? Ganz unten hinzufügen, falls freigeschaltet.</div></div>
+      </div>
+      <button class="btn btn-primary" onclick="dismissVoteIntro()">Los geht's</button>
+    </div>`;
+  document.getElementById('modalBg').classList.add('active');
+  attachSwipeToClose();
+}
+
+function dismissVoteIntro(){
+  localStorage.setItem(VOTE_INTRO_KEY, '1');
+  closeModal();
 }
 
 async function loadPoll(){
@@ -1111,7 +1154,10 @@ function renderVote(){
       <h2>${escapeHtml(p.title)}</h2>
       ${p.movie_night_at ? `<div class="poll-when">🎬 ${escapeHtml(formatPollWhen(p.movie_night_at))}</div>` : ''}
       <p class="poll-sub">Du hast ${used} von ${cap} Stimme${cap===1?'':'n'} vergeben · ${totalVotes} insgesamt${p.allow_suggestions?' · jeder kann Filme vorschlagen':''}</p>
-      ${amAdmin ? `<div style="margin-top:10px;"><button class="poll-admin-btn" onclick="openPollAdmin()">Verwalten</button></div>` : ''}
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        ${amAdmin ? `<button class="poll-admin-btn" onclick="openPollAdmin()">Verwalten</button>` : ''}
+        <button class="poll-admin-btn" onclick="showVoteIntro()">Wie funktioniert's?</button>
+      </div>
     </div>
     ${sorted.map(m=>{
       const mine = myVoteIds.has(m.id);
@@ -1133,9 +1179,9 @@ function renderVote(){
           <div class="vote-actions">
             <button class="vote-btn ${mine?'on':''}" onclick="castVote(${m.id})">${mine?'✓ Deine Stimme':'Abstimmen'}</button>
             <div class="vote-count">${m.vote_count}</div>
-            ${m.trailer_key?`<button class="trailer-btn" onclick="openTrailer('${m.trailer_key}')" title="Trailer">▶</button>`:''}
             ${amAdmin?`<button class="poll-remove" onclick="removePollMovie(${m.id})" title="Entfernen">✕</button>`:''}
           </div>
+          ${m.trailer_key?`<button class="trailer-btn-full" onclick="openTrailer('${m.trailer_key}')">▶ Trailer ansehen</button>`:''}
           ${m.votes.length?`<div class="vote-voters" style="margin-top:8px;">${m.votes.map(v=>avatarHtml(v.user_id,v.name,v.color,22)).join('')}</div>`:''}
         </div>
       </div>`;
