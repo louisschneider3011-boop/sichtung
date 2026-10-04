@@ -1776,7 +1776,36 @@ function listChipsHtml(tmdbId){
     <button class="list-chip" onclick="openRecommendPicker()">
       <span class="lc-ic">📬</span>Empfehlen
     </button>
+    <button class="list-chip" onclick="openManualPosterPicker()">
+      <span class="lc-ic">🎟️</span>Kinoplakat
+    </button>
   </div>`;
+}
+
+/* ---------- manual cinema poster, independent of any poll ---------- */
+function openManualPosterPicker(){
+  const m = currentMovie;
+  if(!m) return;
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-grip"></div>
+    <div class="modal-content" style="padding-top:20px;">
+      <h3 style="font-family:'Bebas Neue';font-size:22px;margin:0 0 4px;">Kinoplakat erstellen</h3>
+      <div class="sub" style="margin-bottom:14px;">${escapeHtml(m.title)}</div>
+      <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;">Wann (optional)</label>
+      <input id="manualPosterWhen" type="datetime-local"
+        style="width:100%;padding:13px 14px;border-radius:var(--radius);border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-family:'Inter';font-size:14px;margin-bottom:14px;">
+      <button class="btn btn-primary" onclick="createManualPoster()">Plakat erstellen</button>
+      <button class="btn-ghost" style="width:100%;" onclick="renderDetail().then(()=>document.getElementById('modalBg').classList.add('active'))">Abbrechen</button>
+    </div>`;
+  document.getElementById('modalBg').classList.add('active');
+  attachSwipeToClose();
+}
+
+function createManualPoster(){
+  const m = currentMovie;
+  if(!m) return;
+  const when = document.getElementById('manualPosterWhen').value || null;
+  openCinemaPoster({ title: m.title, poster_path: m.poster_path, when });
 }
 
 /* ---------- private area rendering ---------- */
@@ -4085,7 +4114,7 @@ async function buildCinemaPoster(movieTitle, posterPath, whenRaw){
 
   ctx.fillStyle = '#E8A33D';
   ctx.font = '700 28px Inter, sans-serif';
-  ctx.fillText('F I L M A B E N D', W/2, 90);
+  ctx.fillText('C I N E   L O U I S', W/2, 90);
 
   ctx.fillStyle = '#EDEFF2';
   ctx.font = '400 92px "Bebas Neue", sans-serif';
