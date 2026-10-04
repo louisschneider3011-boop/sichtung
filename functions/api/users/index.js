@@ -4,7 +4,7 @@ const COLORS = ['#E8A33D', '#7A2436', '#4E7C8C', '#8C6A4E', '#5C7A3D', '#8C4E7A'
 
 const SELECT_FIELDS = `id, name, color, avatar, favorite_movie_tmdb_id,
        favorite_genres, favorite_actor,
-       next_movie_tmdb_id, next_movie_title, next_movie_poster`;
+       next_movie_tmdb_id, next_movie_title, next_movie_poster, is_admin`;
 
 function colorFor(name) {
   let hash = 0;
@@ -46,7 +46,8 @@ export async function onRequestPost({ request, env }) {
     user: {
       id, name, color, avatar: null, favorite_movie_tmdb_id: null,
       favorite_genres: null, favorite_actor: null,
-      next_movie_tmdb_id: null, next_movie_title: null, next_movie_poster: null
+      next_movie_tmdb_id: null, next_movie_title: null, next_movie_poster: null,
+      is_admin: 0
     }
   });
 }
